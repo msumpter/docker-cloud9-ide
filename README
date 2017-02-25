@@ -1,4 +1,0 @@
-# docker-cloud9-ide
-
-Cloud9 IDE - Ubuntu base with common dev tools (ruby, python, php, nodejs, build-essential) 
-built to run as specific system user to maintain proper file ownership in workspace for mounted volume.
