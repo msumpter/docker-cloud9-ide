@@ -19,7 +19,7 @@ ADD rc.local /etc/rc.local
 
 # Install base
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs tmux python \
+	&& apt-get install -y --no-install-recommends build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs tmux python sudo \
 	&& curl -sL https://deb.nodesource.com/setup_4.x | bash - \
 	&& apt-get install -y nodejs \
 	&& git config --global url.https://.insteadOf git:// \
@@ -58,4 +58,4 @@ RUN apt-get remove -y --purge build-essential g++ libssl-dev libxml2-dev python 
 
 # Expose ports.
 EXPOSE 3000
-
+EXPOSE 8080
