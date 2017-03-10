@@ -19,9 +19,9 @@ ADD rc.local /etc/rc.local
 
 # Install base
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs tmux \
+	&& apt-get install -y --no-install-recommends build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs tmux python \
 	&& curl -sL https://deb.nodesource.com/setup_4.x | bash - \
-	&& apt-get install -y nodejs php-cli ruby python \
+	&& apt-get install -y nodejs \
 	&& git config --global url.https://.insteadOf git:// \
 	&& mkdir /workspace \
 	&& useradd -m cloud9 \
@@ -39,19 +39,18 @@ VOLUME /workspace
 USER cloud9
 ENV HOME /home/cloud9
 
-# Clone Cloud9
-RUN git clone https://github.com/c9/core.git /var/cloud9
 
 # Install Cloud9
 WORKDIR /var/cloud9
-RUN scripts/install-sdk.sh \
+RUN git clone --depth 1 -b master --single-branch https://github.com/c9/core.git /var/cloud9 \
+	&& scripts/install-sdk.sh \
 	&& sed -i -e 's/127.0.0.1/0.0.0.0/g' /var/cloud9/configs/standalone.js
 
 # Switch back to root
 USER root
 
-# Clean up APT, tmp dirs, and cloud9 user
-RUN apt-get remove -y --purge build-essential g++ \
+# Clean up APT, extra packages, tmp dirs, and cloud9 user
+RUN apt-get remove -y --purge build-essential g++ libssl-dev libxml2-dev python \
 	&& apt-get -y --purge autoremove \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
