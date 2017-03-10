@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM phusion/baseimage:0.9.19
 MAINTAINER Mat Sumpter <mat@matsumpter.com>
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -6,25 +6,31 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	TERM=xterm
 
 LABEL org.label-schema.url="https://github.com/msumpter/docker-cloud9-ide" \
-	org.label-schema.name="Cloud9 IDE dockerized (Ubuntu)" \
+	org.label-schema.name="Cloud9 IDE (phusion-baseimage)" \
 	org.label-schema.license="MIT" \
 	org.label-schema.vcs-url="https://github.com/msumpter/docker-cloud9-ide" \
 	org.label-schema.schema-version="1.0"
 
+# Use baseimage-docker's init system
+CMD ["/sbin/my_init"]
+
+ADD firstrun.sh /etc/my_init.d/firstrun.sh
+ADD rc.local /etc/rc.local
+
 # Install base
 RUN apt-get update \
-	&& apt-get install -y build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs supervisor \
+	&& apt-get install -y --no-install-recommends build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs tmux \
 	&& curl -sL https://deb.nodesource.com/setup_4.x | bash - \
 	&& apt-get install -y nodejs php-cli ruby python \
 	&& git config --global url.https://.insteadOf git:// \
-	&& sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervisord.conf \
 	&& mkdir /workspace \
 	&& useradd -m cloud9 \
 	&& mkdir /var/cloud9 \
-	&& chown -R cloud9:cloud9 /var/cloud9
+	&& chown -R cloud9:cloud9 /var/cloud9 \
+	&& rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh \
+	&& chmod a+x /etc/rc.local \
+	&& chmod +x /etc/my_init.d/firstrun.sh
 
-ADD supervisor-cloud9.conf /etc/supervisor/conf.d/
-ADD init.sh /
 
 VOLUME /workspace
 
@@ -45,14 +51,12 @@ RUN scripts/install-sdk.sh \
 USER root
 
 # Clean up APT, tmp dirs, and cloud9 user
-RUN apt-get clean \
+RUN apt-get remove -y --purge build-essential g++ \
+	&& apt-get -y --purge autoremove \
+	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-	&& chmod +x /init.sh \
 	&& userdel cloud9
 
-# ------------------------------------------------------------------------------
 # Expose ports.
 EXPOSE 3000
 
-# Fire script /init.sh
-CMD ["bash", "-c", "/init.sh"]
